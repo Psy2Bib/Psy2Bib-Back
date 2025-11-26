@@ -1,100 +1,223 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# AUTHORS
+- [Christophe CUI](https://github.com/ZrChristophe)
+- [HAMZA NADIFI](https://github.com/HamzaNADIFI07)
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
-
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
-
-## Description
-
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
-## Project setup
-
-```bash
-$ npm install
+# Psy2Bib – Whitepaper Technique Complet (Zero-Knowledge + Sécurité + Schémas)
+ 
+## 1. Le Concept Métier – Killer App
+ 
+**Psy2Bib : La thérapie en ligne 100% anonyme, protégée par le Zero-Knowledge et un avatar vidéo temps réel.**
+ 
+- Le patient consulte un psychologue **sans jamais montrer son vrai visage**.
+- Toutes les données psychologiques sont **chiffrées dans le navigateur** avant envoi.
+- Le serveur NestJS est un **serveur aveugle** incapable de lire les données.
+- Le flux WebRTC n’inclut **aucun pixel réel** : seulement un avatar animé généré localement.
+ 
+---
+ 
+## 2. La Donnée Critique – Ce que l’on protège
+ 
+- Identité complète du patient  
+- Notes du psychologue (diagnostic, commentaires, suivi)  
+- Messages patient ↔ psy  
+- Historique des rendez-vous  
+- Informations psychologiques sensibles  
+- Flux vidéo réel (jamais transmis)
+ 
+**Tout ce qui touche à la santé mentale est traité comme secret absolu.**
+ 
+---
+ 
+## 3. Schéma Global du Chiffrement – Preuve que le serveur ne détient jamais la clé
+ 
 ```
-
-## Compile and run the project
-
-```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+                 [ Navigateur Client ]
+                 +-------------------+
+Mot de passe -->|  PBKDF2(salt)     |--> Clé AES-256 locale
+                 +-------------------+
+                           |
+                           | AES-GCM (chiffrement local)
+                           v
+                Blobs chiffrés (profil, notes, messages)
+                           |
+                           v
+                 [ Serveur NestJS "aveugle" ]
+               Stocke uniquement des blobs chiffrés
 ```
-
-## Run tests
-
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+ 
+Aucun secret ne quitte le navigateur.
+ 
+---
+ 
+# 4. Fonctionnalité par Fonctionnalité  
+## Avec schémas détaillés + risques + solutions + technologies utilisées
+ 
+---
+ 
+# 4.1. Authentification (Login / Register)
+ 
+## Objectif
+Séparer complètement :
+- **l’authentification** (hash côté serveur),
+- **le chiffrement des données** (clé dérivée côté client).
+ 
+## Schéma du Flux (Auth)
+ 
 ```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+[Client]                             [Serveur]
+mot de passe -----> Argon2(hash) ----> stock hash_auth
+   |  
+   |--> PBKDF2(salt_e2ee) --> clé AES-256 (locale)
+                 |
+                 |-> chiffre profil -> encrypted_profile -> envoyé
 ```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
-
-# Psy2Bib-Back
+ 
+Le serveur ne voit jamais :
+- la clé AES,
+- le profil en clair.
+ 
+## Risques & Solutions
+ 
+| Risque | Explication | Solution | Technologie |
+|-------|-------------|----------|-------------|
+| Bruteforce | Attaque sur les mots de passe | Argon2id côté serveur | Argon2id |
+| Key guessing | Deviner clé E2EE | PBKDF2 + 100k itérations + salt | Web Crypto API |
+| Vol du JWT | Token volé | Rotation + TTL court | NestJS JWT |
+ 
+---
+ 
+# 4.2. Données Patient – Profil, Dossier, Notes Psy
+ 
+## Objectif
+Stocker **toutes les données psychologiques** chiffrées côté client.
+ 
+## Flux de Chiffrement
+ 
+```
+                [Browser]
+profile.json ----> AES-GCM(key_e2ee)
+                      |
+                      v
+encrypted_profile --------> [Serveur]
+```
+ 
+Le serveur voit :
+- `encrypted_profile`
+- `user_id`
+- `timestamp`
+ 
+Jamais :
+- nom, prénom
+- détails du dossier
+ 
+## Risques & Solutions
+ 
+| Risque | Solution | Technologie |
+|--------|----------|-------------|
+| Déchiffrement serveur | Impossible sans clé locale | E2EE |
+| XSS injectant JS malveillant | CSP + React DOM pur | React + CSP |
+| Fuite depuis logs | Logs sans données sensibles | NestJS Logger Override |
+ 
+---
+ 
+# 4.3. Messagerie Patient ↔ Psy (E2EE)
+ 
+## Objectif
+Messagerie chiffrée, type Signal simplifié.
+ 
+## Schéma Flux
+ 
+```
+Patient
+  message_plain
+       |
+       | AES-GCM(key_e2ee)
+       v
+  encrypted_message ----> Serveur ----> Psy
+                                    |
+                                    v
+                             Déchiffrement local (key_e2ee)
+```
+ 
+## Risques & Solutions
+ 
+| Risque | Solution |
+|--------|----------|
+| Interception MITM | HTTPS + signature messages |
+| Attaques injection | Validation DTO Nest + sanitize |
+| Lecture serveur | Chiffrement côté client |
+ 
+---
+ 
+# 4.4. Rendez-vous & Historique
+ 
+Même modèle que données patient :
+ 
+```
+rendezvous.json -> AES-GCM(key_e2ee) -> serveur
+```
+ 
+Serveur ne voit que dates, IDs techniques.
+ 
+---
+ 
+# 4.5. Visio Avatar – Anonymisation Vidéo & Audio
+ 
+## Objectif
+Ne jamais transmettre le visage réel.
+ 
+## Schéma du Pipeline Vidéo
+ 
+```
+webcam
+   |
+   v
+[MediaPipe] --- landmarks ---> [Avatar Engine WebGL] ---> frames avatar
+                                  |
+                                  v
+                          Encodage WebRTC
+                                  |
+                                  v
+                          Canal chiffré DTLS-SRTP
+```
+ 
+Flux final = **avatar uniquement**, chiffré SRTP.
+ 
+## Risques & Solutions
+ 
+| Risque | Solution | Technologie |
+|--------|----------|-------------|
+| Fuite visage réel | Interdiction d’accéder au raw stream WebRTC | WebRTC + sandbox |
+| Injection frames | Validation pipeline | Canvas/WebGL |
+| Interception flux | SRTP + DTLS | WebRTC |
+ 
+---
+ 
+# 5. Risques Globaux & Mitigation
+ 
+| Risque Général | Type | Mitigation | Techno |
+|----------------|------|------------|--------|
+| XSS | App Web | CSP + React | Content Security Policy |
+| CSRF | App Web | Cookies SameSite | SameSite=Lax |
+| IDOR | Accès illégitime | RLS PostgreSQL | PostgreSQL RLS |
+| MITM | Réseau | HTTPS + DTLS-SRTP | WebRTC |
+| Compromission serveur | Infra | Zero-Knowledge | AES-GCM client |
+| Vol Base de donnée | Infra | Données chiffrées | PostgreSQL + blobs AES |
+ 
+---
+ 
+# 6. Preuve Formelle Zero-Knowledge
+ 
+Le serveur **ne possède aucune** des clés nécessaires au déchiffrement :
+ 
+- La clé AES-256 est dérivée côté client (**PBKDF2**).
+- Les flux WebRTC sont chiffrés **SRTP**, clés négociées P2P.
+- Les données en base (`BYTEA`) sont inutiles sans `key_e2ee`.
+- Les notes, messages, profils, historiques sont illisibles pour le backend.
+ 
+---
+ 
+# 7. Conclusion Whitepaper
+ 
+Psy2Bib n’est pas seulement une application de psychologie.  
+C’est une **infrastructure cryptographique Zero-Knowledge**, couplée à une **visio avatar anonyme**, rendant impossible l’exposition des données sensibles.
