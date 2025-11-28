@@ -9,25 +9,22 @@ services:
       POSTGRES_PASSWORD: psy2bib
       POSTGRES_DB: psy2bib
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     networks:
       - psy2bib-network
 
   backend:
-    image: ghcr.io/psy2bib/psy2bib-backend:latest
     build:
       context: .
       dockerfile: Dockerfile
+    image: psy2bib-backend:dev
     container_name: psy2bib-backend
-    environment:
-      NODE_ENV: development
-      DATABASE_URL: postgresql://psy2bib:psy2bib@postgres:5432/psy2bib
-      JWT_SECRET: your-secret-key
-      JWT_EXPIRATION: 24h
+    env_file:
+      - .env.docker
     ports:
-      - "3000:3000"
+      - "4000:4000"
     depends_on:
       - postgres
     volumes:
@@ -36,24 +33,6 @@ services:
     networks:
       - psy2bib-network
 
-  frontend:
-    image: ghcr.io/psy2bib/psy2bib-frontend:latest
-    build:
-      context: ../front
-      dockerfile: Dockerfile
-    container_name: psy2bib-frontend
-    environment:
-      REACT_APP_API_URL: http://localhost:3000
-      NODE_ENV: development
-    ports:
-      - "3001:3000"
-    depends_on:
-      - backend
-    volumes:
-      - ../front:/app
-      - /app/node_modules
-    networks:
-      - psy2bib-network
 
 volumes:
   postgres-data:
