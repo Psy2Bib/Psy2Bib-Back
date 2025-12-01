@@ -1,50 +1,86 @@
-name: Build and Push Docker Image
+name: Tags Back-End
 
 on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
+
 jobs:
-  build-and-push:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
+  tags:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    outputs:
+      new_tag: ${{ steps.newtag.outputs.tag }}
 
     steps:
+      - name: Check repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch tags
+        run: git fetch --tags
+
+      - name: Determine new tag
+        id: newtag
+        run: |
+          # Vérifie s'il y a des tags existants
+          if git describe --tags `git rev-list --tags --max-count=1` 2>/dev/null; then
+            LAST_TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
+            echo "Dernier tag trouvé: $LAST_TAG"
+            TAG_NUMBER=${LAST_TAG//v/}
+            IFS='.' read -r MAJ MIN PATCH <<< "$TAG_NUMBER"
+            PATCH=$((PATCH + 1))
+            NEW_TAG="v$MAJ.$MIN.$PATCH"
+          else
+            echo "Aucun tag trouvé. Création du tag initial."
+            NEW_TAG="v0.0.1"
+          fi
+          echo "Nouveau tag: $NEW_TAG"
+          echo "::set-output name=tag::$NEW_TAG"
+
+      - name: Configure Git
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+      - name: Create and Push Tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git tag ${{ steps.newtag.outputs.tag }}
+          git push origin ${{ steps.newtag.outputs.tag }} --tags
+
+      - name: Output new tag
+        id: output_tag
+        run: echo "::set-output name=new_tag::${NEW_TAG}"
+
+  BuildandPush:
+    needs: tags
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Convert repo name to lowercase
+        id: repo_name
+        run: echo "::set-output name=lower::$(echo '${{ github.repository }}' | cut -d'/' -f2 | tr '[:upper:]' '[:lower:]')"
+
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to GitHub Container Registry
+      - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/${{ github.repository_owner }}/psy2bib-backend
-          tags: |
-            type=ref,event=branch
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=sha
-            type=raw,value=latest,enable={{is_default_branch}}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v3
         with:
           context: .
-          file: ./Dockerfile
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          file: Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/${{ steps.repo_name.outputs.lower }}:${{ needs.tags.outputs.new_tag }}, ${{ secrets.DOCKER_USERNAME }}/${{ steps.repo_name.outputs.lower }}:latest
+          labels: org.opencontainers.image.source=https://github.com/${{ github.repository }}
