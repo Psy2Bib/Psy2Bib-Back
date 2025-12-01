@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  packages: write
 
 jobs:
   tags:
@@ -19,7 +20,7 @@ jobs:
       new_tag: ${{ steps.newtag.outputs.tag }}
 
     steps:
-      - name: Check repo
+      - name: Checkout repo
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -30,48 +31,43 @@ jobs:
       - name: Determine new tag
         id: newtag
         run: |
-          # Vérifie s'il y a des tags existants
           if git describe --tags `git rev-list --tags --max-count=1` 2>/dev/null; then
             LAST_TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
-            echo "Dernier tag trouvé: $LAST_TAG"
+            echo "Last tag found: $LAST_TAG"
             TAG_NUMBER=${LAST_TAG//v/}
             IFS='.' read -r MAJ MIN PATCH <<< "$TAG_NUMBER"
             PATCH=$((PATCH + 1))
             NEW_TAG="v$MAJ.$MIN.$PATCH"
           else
-            echo "Aucun tag trouvé. Création du tag initial."
+            echo "No tag found. Creating initial tag."
             NEW_TAG="v0.0.1"
           fi
-          echo "Nouveau tag: $NEW_TAG"
-          echo "::set-output name=tag::$NEW_TAG"
+          echo "New tag: $NEW_TAG"
+          echo "tag=$NEW_TAG" >> $GITHUB_OUTPUT
 
       - name: Configure Git
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
 
-      - name: Create and Push Tag
+      - name: Create and Push Git tag
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git tag ${{ steps.newtag.outputs.tag }}
           git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git ${{ steps.newtag.outputs.tag }}
 
-      - name: Output new tag
-        id: output_tag
-        run: echo "::set-output name=new_tag::${{ steps.newtag.outputs.tag }}"
-
-  BuildandPush:
+  build-and-push:
     needs: tags
     runs-on: ubuntu-latest
 
     steps:
-      - name: Convert repo name to lowercase
-        id: repo_name
-        run: echo "::set-output name=lower::$(echo '${{ github.repository }}' | cut -d'/' -f2 | tr '[:upper:]' '[:lower:]')"
-
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Convert repo name to lowercase
+        id: repo_name
+        run: echo "lower=$(echo '${{ github.repository }}' | cut -d'/' -f2 | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
@@ -79,11 +75,22 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and push Docker image
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker images
         uses: docker/build-push-action@v3
         with:
           context: .
           file: Dockerfile
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/${{ steps.repo_name.outputs.lower }}:${{ needs.tags.outputs.new_tag }}, ${{ secrets.DOCKER_USERNAME }}/${{ steps.repo_name.outputs.lower }}:latest
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/${{ steps.repo_name.outputs.lower }}:${{ needs.tags.outputs.new_tag }}
+            ${{ secrets.DOCKER_USERNAME }}/${{ steps.repo_name.outputs.lower }}:latest
+            ghcr.io/psy2bib/${{ steps.repo_name.outputs.lower }}:${{ github.sha }}
+            ghcr.io/psy2bib/${{ steps.repo_name.outputs.lower }}:latest
           labels: org.opencontainers.image.source=https://github.com/${{ github.repository }}
