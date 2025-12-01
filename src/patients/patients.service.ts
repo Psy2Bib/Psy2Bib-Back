@@ -16,14 +16,14 @@ export class PatientsService {
     user: User,
     data: {
       encryptedMasterKey: string;
-      encryptionSalt: string;
+      salt: string;
       encryptedProfile: string;
     },
   ) {
     const patient = this.patientsRepo.create({
       user,
       encryptedMasterKey: data.encryptedMasterKey,
-      encryptionSalt: data.encryptionSalt,
+      salt: data.salt,
       encryptedProfile: data.encryptedProfile,
     });
     return this.patientsRepo.save(patient);
@@ -68,8 +68,8 @@ export class PatientsService {
       patient.encryptedMasterKey = dto.encryptedMasterKey;
     }
 
-    if (dto.encryptionSalt !== undefined) {
-      patient.encryptionSalt = dto.encryptionSalt;
+    if (dto.salt !== undefined) {
+      patient.salt = dto.salt;
     }
 
     return this.patientsRepo.save(patient);

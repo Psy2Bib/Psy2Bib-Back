@@ -19,7 +19,7 @@ export class PatientsController {
 
   /**
    * Récupère les blobs chiffrés du patient connecté.
-   * (encryptedMasterKey, encryptionSalt, encryptedProfile)
+   * (encryptedMasterKey, salt, encryptedProfile)
    */
   @Get('me')
   async getMe(@Req() req: AuthRequest) {
@@ -29,7 +29,7 @@ export class PatientsController {
     // On renvoie seulement les blobs chiffrés + éventuellement des infos utiles
     return {
       encryptedMasterKey: patient.encryptedMasterKey,
-      encryptionSalt: patient.encryptionSalt,
+      salt: patient.salt,
       encryptedProfile: patient.encryptedProfile,
     };
   }
@@ -48,7 +48,7 @@ export class PatientsController {
 
     return {
       encryptedMasterKey: updated.encryptedMasterKey,
-      encryptionSalt: updated.encryptionSalt,
+      salt: updated.salt,
       encryptedProfile: updated.encryptedProfile,
     };
   }
