@@ -13,7 +13,7 @@ import {
   
     @IsString()
     @MinLength(8)
-    password: string;
+    passwordHash: string;
   
     @IsString()
     firstName: string;
@@ -25,7 +25,7 @@ import {
     encryptedMasterKey: string;
   
     @IsString()
-    encryptionSalt: string;
+    salt: string;
   
     @IsString()
     encryptedProfile: string;

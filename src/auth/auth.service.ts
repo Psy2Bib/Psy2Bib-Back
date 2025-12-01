@@ -36,12 +36,11 @@ import {
         throw new ConflictException('Email already registered');
       }
   
-      const passwordHash = await bcrypt.hash(dto.password, this.rounds);
       const role: UserRole = dto.role ? (dto.role as UserRole) : UserRole.PATIENT;
   
       const user = await this.usersService.create({
         email: dto.email,
-        passwordHash,
+        passwordHash:dto.passwordHash,
         firstName: dto.firstName,
         lastName: dto.lastName,
         role,
@@ -49,18 +48,18 @@ import {
   
       // Par défaut, rien (utile si plus tard on a des roles non-patient)
       let encryptedMasterKey: string | null = null;
-      let encryptionSalt: string | null = null;
+      let salt: string | null = null;
       let encryptedProfile: string | null = null;
   
       if (role === UserRole.PATIENT) {
         const patient = await this.patientsService.createForUser(user, {
           encryptedMasterKey: dto.encryptedMasterKey,
-          encryptionSalt: dto.encryptionSalt,
+          salt: dto.salt,
           encryptedProfile: dto.encryptedProfile,
         });
   
         encryptedMasterKey = patient.encryptedMasterKey;
-        encryptionSalt = patient.encryptionSalt;
+        salt = patient.salt;
         encryptedProfile = patient.encryptedProfile;
       }
   
@@ -71,7 +70,7 @@ import {
       return {
         ...tokens,
         encryptedMasterKey,
-        encryptionSalt,
+        salt,
         encryptedProfile,
         role: user.role,
       };
@@ -99,7 +98,7 @@ import {
      * - récupère les blobs chiffrés s'il s'agit d'un PATIENT
      */
     async login(dto: LoginDto): Promise<AuthResponseDto> {
-      const user = await this.validateUser(dto.email, dto.password);
+      const user = await this.validateUser(dto.email, dto.passwordHash);
       if (!user) {
         throw new UnauthorizedException('Invalid credentials');
       }
@@ -109,14 +108,14 @@ import {
       await this.usersService.updateRefreshTokenHash(user.id, refreshTokenHash);
   
       let encryptedMasterKey: string | null = null;
-      let encryptionSalt: string | null = null;
+      let salt: string | null = null;
       let encryptedProfile: string | null = null;
   
       if (user.role === UserRole.PATIENT) {
         const patient = await this.patientsService.findByUserId(user.id);
         if (patient) {
           encryptedMasterKey = patient.encryptedMasterKey;
-          encryptionSalt = patient.encryptionSalt;
+          salt = patient.salt;
           encryptedProfile = patient.encryptedProfile;
         }
       }
@@ -124,7 +123,7 @@ import {
       return {
         ...tokens,
         encryptedMasterKey,
-        encryptionSalt,
+        salt,
         encryptedProfile,
         role: user.role,
       };
@@ -149,14 +148,14 @@ import {
       const tokens = await this.generateTokens(user.id, user.email, user.role);
   
       let encryptedMasterKey: string | null = null;
-      let encryptionSalt: string | null = null;
+      let salt: string | null = null;
       let encryptedProfile: string | null = null;
   
       if (user.role === UserRole.PATIENT) {
         const patient = await this.patientsService.findByUserId(user.id);
         if (patient) {
           encryptedMasterKey = patient.encryptedMasterKey;
-          encryptionSalt = patient.encryptionSalt;
+          salt = patient.salt;
           encryptedProfile = patient.encryptedProfile;
         }
       }
@@ -164,7 +163,7 @@ import {
       return {
         ...tokens,
         encryptedMasterKey,
-        encryptionSalt,
+        salt,
         encryptedProfile,
         role: user.role,
       };
