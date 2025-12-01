@@ -23,5 +23,5 @@ export class UpdateEncryptedProfileDto {
    */
   @IsOptional()
   @IsString()
-  encryptionSalt?: string;
+  salt?: string;
 }

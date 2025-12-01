@@ -22,7 +22,7 @@ import {
     encryptedMasterKey: string;
   
     @Column({ type: 'text' })
-    encryptionSalt: string;
+    salt: string;
   
     @Column({ type: 'text' })
     encryptedProfile: string;
