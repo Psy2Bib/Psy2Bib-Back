@@ -1,19 +1,19 @@
-version: '3.8'
-
 services:
   postgres:
-    image: postgres:16-alpine
+    image: postgres:17-alpine
     container_name: psy2bib-postgres
     environment:
-      POSTGRES_USER: psy2bib
-      POSTGRES_PASSWORD: psy2bib
-      POSTGRES_DB: psy2bib
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
-      - "5433:5432"
+      - "${DB_PORT}:${DB_PORT}"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     networks:
       - psy2bib-network
+    env_file:
+      - .env.docker
 
   backend:
     build:
@@ -24,7 +24,7 @@ services:
     env_file:
       - .env.docker
     ports:
-      - "4000:4000"
+      - "${PORT}:${PORT}"
     depends_on:
       - postgres
     volumes:
@@ -32,7 +32,6 @@ services:
       - /app/node_modules
     networks:
       - psy2bib-network
-
 
 volumes:
   postgres-data:

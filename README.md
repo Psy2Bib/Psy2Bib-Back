@@ -1,11 +1,13 @@
-<p align="center"><img src="https://img.shields.io/badge/npm-v11.6.4-blue" alt="NPM Version" /></a>
-<p align="center"><img src="https://img.shields.io/badge/node-25.2.1-blue" alt="NODE Version" /></a>
-<p align="center"><img src="https://img.shields.io/badge/NEST-v11.1.4-blue" alt="NEST Version" /></a>
-<p align="center"><img src="https://img.shields.io/badge/PostgreSQL-v18.1.0-blue" alt="POSTGRES Version" /></a>
-<p align="center"><img src="https://img.shields.io/badge/Docker-v4.53.0-blue" alt="DOCKER Version" /></a>
-<p align="center"><img src="https://img.shields.io/badge/Git-v2.52.0-blue" alt="GIT Version" /></a>
-<p align="center"><img href="https://github.com/Psy2Bib" src="https://img.shields.io/badge/github-orga-blue?logo=github" alt="Organization Psy2bib" /></a>
+<p align="center">
+  <a href="https://github.com/Psy2Bib" target="_blank"><img src="https://img.shields.io/badge/npm-v11.6.4-blue" alt="NPM Version" /></a>
+  <a href="https://github.com/Psy2Bib" target="_blank"><img src="https://img.shields.io/badge/node-25.2.1-blue" alt="NODE Version" /></a>
+  <a href="https://github.com/Psy2Bib" target="_blank"><img src="https://img.shields.io/badge/NEST-v11.1.4-blue" alt="NEST Version" /></a>
+  <a href="https://github.com/Psy2Bib" target="_blank"><img src="https://img.shields.io/badge/PostgreSQL-v18.1.0-blue" alt="POSTGRES Version" /></a>
+  <a href="https://github.com/Psy2Bib" target="_blank"><img src="https://img.shields.io/badge/Docker-v4.53.0-blue" alt="DOCKER Version" /></a>
+  <a href="https://github.com/Psy2Bib" target="_blank"><img src="https://img.shields.io/badge/Git-v2.52.0-blue" alt="GIT Version" /></a>
+  <a href="https://github.com/Psy2Bib" target="_blank"><img src="https://img.shields.io/badge/github-orga-blue?logo=github" alt="Organization Psy2bib" /></a>
 </p>
+
 
 # Authors
 
