@@ -2,6 +2,7 @@
 .env.docker
 node_modules/
 dist/
+.env
 
 # macOS
 .DS_Store
