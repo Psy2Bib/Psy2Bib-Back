@@ -25,6 +25,43 @@ Ce projet fournit une API sécurisée pour la mise en relation de patients et ps
 
 ---
 
+## Modules et fonctionnalités
+
+### Gestion des psychologues
+- Création et mise à jour du profil public  
+- Recherche par nom, spécialité, langue  
+- Visibilité publique du profil  
+- Liaison automatique avec l’utilisateur  
+
+### Gestion des patients
+- Profil patient (données personnelles chiffrées)  
+- Association avec compte utilisateur  
+
+### Gestion des rendez-vous
+- Création / modification / annulation  
+- Gestion des disponibilités des psychologues  
+- Vérification automatique de conflits  
+- Partage patient ↔ psychologue  
+
+### Chat en temps réel
+- WebSocket Gateway dédié  
+- Messages stockés en base  
+- Émissions ciblées par room  
+
+### Système de visio (WebRTC + WebSockets)
+- Gateway `visio` pour la signalisation  
+- Vérification JWT sur WebSocket  
+- Jointure sécurisée à un rendez-vous  
+- Échange de signaux WebRTC via Socket.io  
+
+### Authentification & Sécurité
+- JWT Access / Refresh  
+- Guards HTTP + Guards WebSocket  
+- Hash de refresh token en base  
+- Rôles : `PATIENT`, `PSY`, `ADMIN`  
+
+---
+
 ## Technologies utilisées
 
 - **Backend** : NestJS, TypeScript  
@@ -43,7 +80,13 @@ Pour les détails d'implémentation, les endpoints et les flux de données :
 
 ---
 
+## Installation
+1. Cloner le dépôt
+git clone https://github.com/ton-repo/psy2bib-api.git
+cd psy2bib-api
 ##  Swagger API
+
+---
 
 Une fois le serveur lancé, la documentation interactive est accessible sur :  
 👉 **http://localhost:3000/api**
@@ -94,31 +137,54 @@ npm run test:cov
 
 ## Architecture du projet
 src/
-
- ├─ auth/           # Gestion JWT, stratégies access & refresh
  
- ├─ users/          # Gestion des utilisateurs
+ ├── auth/                # Authentification, JWT, Guards
  
- ├─ appointments/   # Gestion des rendez-vous
+ ├── users/               # Utilisateurs (patients/psychologues)
  
- ├─ messages/       # Messagerie chiffrée
+ ├── patients/            # Profils patients
  
- ├─ common/         # Filtres, pipes, guards, interceptors
+ ├── psychologists/       # Profils psychologues
  
- └─ main.ts         # Point d'entrée de l'application
+ ├── appointments/        # Rendez-vous + disponibilités
+ 
+ ├── chat/                # Chat temps réel
+ 
+ ├── visio/               # WebRTC + WebSockets pour la visio
+ 
+ ├── config/              # ORM config
+ 
+ ├── app.module.ts        # Module principal
+ 
+ └── main.ts              # Entrée application
 
 
-## Contribuer
+---
 
-1 Fork le projet
+## Base de données (TypeORM)
+Entities principales :
 
-2 Crée une branche feature : git checkout -b feature/ma-feature
+- User
 
-3 Commit tes changements : git commit -m "feat: ajout de ma feature"
+- Patient
 
-4 Push sur ta branche : git push origin feature/ma-feature
+- PsychologistProfile
 
-5 Ouvre un Pull Request
+- Appointment
+
+- Availability
+
+- Message
+
+- Types de relations :
+
+- User ↔ Patient (1:1)
+
+- User ↔ PsychologistProfile (1:1)
+
+- Psychologist ↔ Appointment (1:N)
+
+- Patient ↔ Appointment (1:N)
 
 
 ## Auteurs
