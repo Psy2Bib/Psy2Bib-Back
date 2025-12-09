@@ -1,0 +1,11 @@
+# Environment variables
+.env.docker
+node_modules/
+dist/
+.env
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+*.swp
