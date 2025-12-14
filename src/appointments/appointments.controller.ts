@@ -3,6 +3,7 @@ import {
   Post,
   Get,
   Patch,
+  Delete,
   Body,
   Param,
   Query,
@@ -73,6 +74,38 @@ export class AppointmentsController {
       count: slots.length,
       slots,
     };
+  }
+
+  /**
+   * Suppression d'un créneau (PSY)
+   *
+   * DELETE /psy/availabilities/:id
+   */
+  @Delete('psy/availabilities/:id')
+  @ApiOperation({
+    summary: 'Supprimer un créneau de disponibilité (non réservé)',
+  })
+  async deleteAvailability(
+    @Req() req: RequestWithUser,
+    @Param('id') availabilityId: string,
+  ) {
+    const user = req.user;
+    const result = await this.appointmentsService.deleteAvailability(
+      user,
+      availabilityId,
+    );
+    return result;
+  }
+
+  /**
+   * Alias legacy (DELETE) /psy/availabilities/:id/delete pour compat
+   */
+  @Delete('psy/availabilities/:id/delete')
+  async deleteAvailabilityAlias(
+    @Req() req: RequestWithUser,
+    @Param('id') availabilityId: string,
+  ) {
+    return this.deleteAvailability(req, availabilityId);
   }
 
   /**
@@ -241,6 +274,45 @@ export class AppointmentsController {
 
     return {
       message: 'Appointment cancelled successfully',
+      appointment,
+    };
+  }
+
+  /**
+   * Confirme un rendez-vous (PSY ou ADMIN)
+   *
+   * PATCH /appointments/:id/confirm
+   */
+  @Patch('appointments/:id/confirm')
+  @ApiOperation({
+    summary: 'Confirmer un rendez-vous',
+    description:
+      'Permet au psychologue concerné (ou un admin) de passer le rendez-vous à CONFIRMED.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID du rendez-vous',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiResponse({ status: 200, description: 'Rendez-vous confirmé avec succès' })
+  @ApiResponse({ status: 401, description: 'Non autorisé' })
+  @ApiResponse({
+    status: 403,
+    description: "Vous n'avez pas le droit de confirmer ce rendez-vous",
+  })
+  @ApiResponse({ status: 404, description: 'Rendez-vous non trouvé' })
+  async confirmAppointment(
+    @Req() req: RequestWithUser,
+    @Param('id') appointmentId: string,
+  ) {
+    const user = req.user;
+    const appointment = await this.appointmentsService.confirmAppointment(
+      user,
+      appointmentId,
+    );
+
+    return {
+      message: 'Appointment confirmed successfully',
       appointment,
     };
   }
