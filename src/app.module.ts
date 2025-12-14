@@ -20,7 +20,6 @@ import { AuthModule } from './auth/auth.module';
 import { PatientsModule } from './patients/patients.module';
 import { AppointmentsModule } from './appointments/appointments.module';
 import { PsychologistsModule } from './psychologists/psychologists.module';
-import { VisioModule } from './visio/visio.module';
 import { ChatModule } from './chat/chat.module';
 import { CalendarModule } from './calendar/calendar.module';
 import { PsyTasksModule } from './psy-tasks/psy-tasks.module';
@@ -111,7 +110,6 @@ import { Availability } from './appointments/entities/availability.entity';
      * - AuthModule : Authentification JWT, login, register, refresh tokens
      * - AppointmentsModule : Gestion des rendez-vous et disponibilités
      * - PsychologistsModule : Profils publics des psys, recherche
-     * - VisioModule : Signalisation WebRTC pour la visio-conférence
      * - ChatModule : Messagerie instantanée chiffrée (E2EE)
      * - CalendarModule : Gestion du calendrier et des événements
      * - PsyTasksModule : Tâches/notes privées des psychologues
@@ -121,7 +119,6 @@ import { Availability } from './appointments/entities/availability.entity';
     AuthModule,
     AppointmentsModule,
     PsychologistsModule,
-    VisioModule,
     ChatModule,
     CalendarModule,
     PsyTasksModule,
