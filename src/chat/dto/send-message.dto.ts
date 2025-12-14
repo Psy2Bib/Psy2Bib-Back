@@ -1,5 +1,5 @@
-import { IsString, IsUUID } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsString, IsUUID, IsOptional } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class SendMessageDto {
   @ApiProperty({ description: "ID de l'utilisateur destinataire" })
@@ -13,4 +13,9 @@ export class SendMessageDto {
   @ApiProperty({ description: "Vecteur d'initialisation (Base64)" })
   @IsString()
   iv: string;
+
+  @ApiPropertyOptional({ description: 'Chemin du fichier joint chiffré (si applicable)' })
+  @IsOptional()
+  @IsString()
+  attachmentPath?: string;
 }
