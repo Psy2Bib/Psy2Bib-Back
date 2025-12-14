@@ -43,6 +43,26 @@ export class AppointmentsService {
   }
 
   /**
+   * Suppression d'un créneau (PSY propriétaire uniquement, non réservé)
+   */
+  async deleteAvailability(psy: AuthUser, availabilityId: string) {
+    this.ensurePsyRole(psy);
+    const slot = await this.availabilityRepo.findOne({
+      where: { id: availabilityId },
+      relations: ['psy'],
+    });
+    if (!slot) throw new NotFoundException('Availability not found');
+    if (slot.psy.id !== psy.id) {
+      throw new ForbiddenException('Not your availability');
+    }
+    if (slot.isBooked) {
+      throw new ConflictException('Cannot delete a booked slot');
+    }
+    await this.availabilityRepo.remove(slot);
+    return { deleted: true };
+  }
+
+  /**
    * Vérifie que l'utilisateur connecté est bien un PATIENT
    */
   ensurePatientRole(user: AuthUser) {
@@ -250,8 +270,10 @@ export class AppointmentsService {
           patient: { id: patient.id } as User,
           availability,
           type: dto.type,
-          status: AppointmentStatus.CONFIRMED,
+          status: AppointmentStatus.PENDING,
           meetingId: dto.type === AppointmentType.ONLINE ? randomUUID() : null,
+          scheduledStart: availability.start,
+          scheduledEnd: availability.end,
         });
 
         availability.isBooked = true;
@@ -345,6 +367,36 @@ export class AppointmentsService {
       appointment.availability.isBooked = false;
       await this.availabilityRepo.save(appointment.availability);
     }
+
+    return this.appointmentRepo.save(appointment);
+  }
+
+  /**
+   * Confirme un rendez-vous (PSY propriétaire ou ADMIN)
+   */
+  async confirmAppointment(
+    user: AuthUser,
+    appointmentId: string,
+  ): Promise<Appointment> {
+    const appointment = await this.appointmentRepo.findOne({
+      where: { id: appointmentId },
+      relations: ['patient', 'psy', 'availability'],
+    });
+
+    if (!appointment) {
+      throw new NotFoundException('Appointment not found');
+    }
+
+    const isPsy = user.role === 'PSY' && appointment.psy.id === user.id;
+    const isAdmin = user.role === 'ADMIN';
+
+    if (!isPsy && !isAdmin) {
+      throw new ForbiddenException(
+        'You are not allowed to confirm this appointment',
+      );
+    }
+
+    appointment.status = AppointmentStatus.CONFIRMED;
 
     return this.appointmentRepo.save(appointment);
   }
