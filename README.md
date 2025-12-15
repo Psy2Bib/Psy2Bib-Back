@@ -61,6 +61,30 @@ npm ci
 npm run start:dev
 ```
 
+### Déploiement (Neon ou Postgres managé)
+
+1. Variables d'env (exemple Neon) :
+   ```bash
+   DATABASE_URL=postgres://<user>:<password>@<neon-host>:5432/<db>?sslmode=require
+   DB_SSL=true
+   DB_SYNC=false
+   ```
+   (`DB_SYNC=false` désactive la synchro automatique pour éviter les modifications non contrôlées en prod).
+2. Générer une migration quand tu modifies les entités : `npm run migration:generate -- src/migrations/<Nom>` (ex: `npm run migration:generate -- src/migrations/init`)
+3. Appliquer le schéma via migrations : `npm run migration:run` (utilise `.env`).
+4. Construire l'image : `docker-compose -f docker-compose.yml build backend`
+5. Lancer le conteneur : `docker-compose -f docker-compose.yml up backend`
+
+### Utiliser Neon (PostgreSQL serverless)
+
+1. Créez une base de données sur [Neon](https://neon.tech) et copiez l'URL de connexion Postgres (format `postgres://user:password@neonhost:5432/dbname`).
+2. Dans `.env`, renseignez l'URL Neon et activez le TLS (les variables `DB_HOST/DB_USERNAME/...` sont ignorées si `DATABASE_URL` est présent) :
+   ```bash
+   DATABASE_URL=postgres://<user>:<password>@<neon-host>:5432/<db>
+   DB_SSL=true
+   ```
+3. Démarrez l'API normalement (`npm run start:dev` ou `docker-compose up backend`). Le service Postgres du `docker-compose` n'est plus nécessaire quand vous pointez vers Neon.
+
 ## Tests
 
 ```bash
