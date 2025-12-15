@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   postgres:
     image: postgres:17-alpine
@@ -14,6 +12,12 @@ services:
       - postgres-data:/var/lib/postgresql/data
     networks:
       - psy2bib-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U psy2bib"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
 
   backend:
     build:
@@ -22,11 +26,12 @@ services:
     image: psy2bib-backend:dev
     container_name: psy2bib-backend
     env_file:
-      - .env.docker
+      - .env
     ports:
       - "4000:4000"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     networks:
       - psy2bib-network
 
