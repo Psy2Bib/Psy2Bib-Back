@@ -121,7 +121,7 @@ async function bootstrap() {
    * ou par défaut 5500 si elle n'est pas définie.
    * En production Docker, on utilise généralement 3000.
    */
-  await app.listen(process.env.PORT ?? 5500);
+  await app.listen(process.env.PORT ?? 3000);
 }
 
 // Lancement de l'application
