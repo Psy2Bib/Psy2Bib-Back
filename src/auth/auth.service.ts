@@ -8,10 +8,11 @@
  * - Déconnexion (logout)
  * 
  * Architecture Zero-Knowledge :
- * Le backend ne connaît JAMAIS les mots de passe en clair.
- * Le frontend envoie un hash pré-calculé, et le backend stocke/compare ce hash directement.
+ * - Le backend ne connaît JAMAIS les mots de passe en clair.
+ * - Le frontend envoie un hash pré-calculé (ex: Argon2).
+ * - Le backend le re-hash avec bcrypt avant stockage pour ajouter une couche côté serveur.
  * 
- * Seuls les refresh tokens sont hashés côté backend avec bcrypt pour une sécurité supplémentaire.
+ * Les refresh tokens sont également hashés côté backend avec bcrypt.
  * 
  * @module auth
  */
@@ -41,26 +42,16 @@ import { UserRole } from '../users/user.entity';
 @Injectable()
 export class AuthService {
   /**
-   * Nombre de rounds bcrypt pour le hashing des refresh tokens
+   * Nombre de rounds bcrypt pour le hashing côté serveur
    * 
    * 12 rounds = bon équilibre entre sécurité et performance
    * - Plus c'est élevé, plus c'est sécurisé (mais plus lent)
    * - 12 rounds prend environ 200-300ms sur un serveur moderne
    * - Recommandé par l'OWASP pour 2024
    * 
-   * Note : On utilise bcrypt UNIQUEMENT pour les refresh tokens.
-   * Les mots de passe utilisateur arrivent déjà hashés du frontend.
-   */
-  /**
-   * Nombre de rounds bcrypt pour le hashing des refresh tokens
-   * 
-   * 12 rounds = bon équilibre entre sécurité et performance
-   * - Plus c'est élevé, plus c'est sécurisé (mais plus lent)
-   * - 12 rounds prend environ 200-300ms sur un serveur moderne
-   * - Recommandé par l'OWASP pour 2024
-   * 
-   * Note : On utilise bcrypt UNIQUEMENT pour les refresh tokens.
-   * Les mots de passe utilisateur arrivent déjà hashés du frontend.
+   * Note : On utilise bcrypt pour :
+   * - Re-hasher le hash de mot de passe reçu du frontend (double hashing)
+   * - Hasher les refresh tokens
    */
   private readonly rounds = 12;
 
@@ -131,13 +122,15 @@ export class AuthService {
     /**
      * Création de l'utilisateur
      * 
-     * ⚠️ POINT CRITIQUE : On stocke le passwordHash tel quel, SANS le re-hasher.
-     * Le frontend a déjà fait le hashing avec son algorithme (bcrypt, argon2, etc.).
-     * Cette approche Zero-Knowledge garantit que le serveur ne voit jamais le mot de passe.
+     * ⚠️ POINT CRITIQUE : Double hashing
+     * - Le frontend envoie déjà un hash (ex: Argon2) => le backend ne voit jamais le mot de passe.
+     * - On re-hash côté serveur avec bcrypt avant stockage pour ajouter une protection serveur.
      */
+    const passwordHashBcrypt = await bcrypt.hash(dto.passwordHash, this.rounds);
+
     const user = await this.usersService.create({
       email: dto.email,
-      passwordHash: dto.passwordHash, // Hash reçu du front, stocké tel quel
+      passwordHash: passwordHashBcrypt, // Hash du hash frontend
       pseudo: dto.pseudo,
       role,
     });
@@ -247,8 +240,9 @@ export class AuthService {
    * 
    * Architecture Zero-Knowledge :
    * - Le frontend envoie un hash pré-calculé (même hash qu'à l'inscription)
-   * - On compare directement ce hash avec celui stocké en BDD
-   * - PAS de bcrypt.compare() ici, juste une comparaison stricte de chaînes
+   * - On compare avec bcrypt le hash frontend (en entrée) et le hash bcrypt stocké
+   * - Compatibilité ascendante : si un ancien compte a encore le hash brut, on compare
+   *   en clair puis on le re-hash automatiquement avec bcrypt.
    * 
    * Cette approche garantit que :
    * 1. Le serveur ne voit jamais le mot de passe en clair
@@ -275,19 +269,17 @@ export class AuthService {
     const user = await this.usersService.findByEmailWithPassword(email);
     if (!user) return null;
 
-    /**
-     * Comparaison stricte des hashs
-     * 
-     * On compare simplement les deux chaînes de caractères.
-     * Si elles sont identiques, l'utilisateur a fourni le bon mot de passe.
-     * 
-     * Sécurité :
-     * - Le hash frontend peut être bcrypt, argon2, sha256+salt, ou autre
-     * - Le backend ne fait qu'une comparaison d'égalité (===)
-     * - Si les hashs ne correspondent pas, on retourne null (échec)
-     */
-    if (user.passwordHash !== incomingPasswordHash) {
-      return null;
+    // Ancienne donnée : hash non bcrypt stocké tel quel → on compare en clair puis on migre
+    const isBcrypt = user.passwordHash.startsWith('$2');
+    if (isBcrypt) {
+      const match = await bcrypt.compare(incomingPasswordHash, user.passwordHash);
+      if (!match) return null;
+    } else {
+      if (user.passwordHash !== incomingPasswordHash) return null;
+      // Migration silencieuse : on re-hash côté serveur
+      const migratedHash = await bcrypt.hash(incomingPasswordHash, this.rounds);
+      await this.usersService.updatePasswordHash(user.id, migratedHash);
+      user.passwordHash = migratedHash;
     }
 
     return user;

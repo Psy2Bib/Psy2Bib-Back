@@ -186,4 +186,14 @@ export class UsersService {
   async updateRefreshTokenHash(userId: string, hash: string | null) {
     await this.usersRepo.update(userId, { refreshTokenHash: hash });
   }
+
+  /**
+   * Met à jour le hash du mot de passe (hash côté serveur)
+   * 
+   * Utilisé pour migrer silencieusement les anciens comptes qui stockaient
+   * le hash frontend tel quel, ou pour forcer un re-hash.
+   */
+  async updatePasswordHash(userId: string, passwordHash: string) {
+    await this.usersRepo.update(userId, { passwordHash });
+  }
 }

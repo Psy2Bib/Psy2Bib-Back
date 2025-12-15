@@ -5,8 +5,8 @@
  * Elle stocke les informations de base de tous les utilisateurs (patients, psychologues, admins).
  * 
  * Note importante sur la sécurité :
- * Le passwordHash reçu du frontend est déjà hashé côté client (architecture Zero-Knowledge).
- * Le backend ne fait que stocker ce hash tel quel, sans le re-hasher.
+ * Le password hash est généré côté client (ex: Argon2) puis re-hashé côté serveur avec bcrypt.
+ * Le backend ne voit jamais le mot de passe en clair.
  * 
  * @module users
  */
@@ -79,9 +79,10 @@ export class User {
   /**
    * Hash du mot de passe
    * 
-   * ⚠️ IMPORTANT : Architecture Zero-Knowledge
-   * Ce hash est généré côté CLIENT et envoyé tel quel au backend.
-   * Le serveur ne connaît JAMAIS le mot de passe en clair.
+   * ⚠️ IMPORTANT : Architecture Zero-Knowledge + double hashing
+   * - Le hash est généré côté CLIENT (ex: Argon2) et envoyé au backend.
+   * - Le backend re-hash ce hash avec bcrypt avant stockage.
+   * - Le serveur ne connaît JAMAIS le mot de passe en clair.
    * 
    * Comportement spécial :
    * - select: false => Ce champ n'est JAMAIS retourné par défaut dans les requêtes
