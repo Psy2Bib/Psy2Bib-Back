@@ -12,9 +12,23 @@ import { config } from 'dotenv';
 
 config();
 
-const databaseUrl = process.env.DATABASE_URL || process.env.DB_URL;
+const rawDatabaseUrl = process.env.DATABASE_URL || process.env.DB_URL;
+
+/**
+ * Normalisation de l'URL de connexion (cloud / Neon / managed Postgres)
+ *
+ * Certains providers refusent les connexions non chiffrées et exigent
+ * sslmode=require. On l'ajoute automatiquement si absent.
+ */
+const databaseUrl = rawDatabaseUrl
+  ? rawDatabaseUrl.includes('sslmode=')
+    ? rawDatabaseUrl
+    : `${rawDatabaseUrl}${rawDatabaseUrl.includes('?') ? '&' : '?'}sslmode=require`
+  : undefined;
+
 const sslRequired =
-  process.env.DB_SSL === 'true' || databaseUrl?.includes('neon.tech');
+  process.env.DB_SSL === 'true' || !!databaseUrl || rawDatabaseUrl?.includes('neon.tech');
+
 const sslConfig = sslRequired ? { rejectUnauthorized: false } : undefined;
 
 export const AppDataSource = new DataSource({
@@ -33,13 +47,13 @@ export const AppDataSource = new DataSource({
         password: process.env.DB_PASSWORD || 'psy2bib',
         database: process.env.DB_NAME || 'psy2bib',
       }),
-  
+
   // Découverte automatique des entités
   entities: [__dirname + '/**/*.entity{.ts,.js}'],
-  
+
   // Découverte automatique des migrations
   migrations: [__dirname + '/migrations/*{.ts,.js}'],
-  
+
   // Synchronisation désactivée pour les migrations
   synchronize: false,
 

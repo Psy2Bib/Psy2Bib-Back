@@ -35,13 +35,29 @@ import { User } from '../users/user.entity';
 export const getTypeOrmConfig = (
   configService: ConfigService,
 ): TypeOrmModuleOptions => {
-  const databaseUrl =
+  const rawDatabaseUrl =
     configService.get<string>('DATABASE_URL') ||
     configService.get<string>('DB_URL');
+
+  /**
+   * Normalisation de l'URL de connexion (cloud / Neon / managed Postgres)
+   * 
+   * Certains providers refusent les connexions non chiffrées et exigent
+   * sslmode=require. On l'ajoute automatiquement si absent.
+   */
+  const databaseUrl = rawDatabaseUrl
+    ? rawDatabaseUrl.includes('sslmode=')
+      ? rawDatabaseUrl
+      : `${rawDatabaseUrl}${rawDatabaseUrl.includes('?') ? '&' : '?'}sslmode=require`
+    : undefined;
+
   const sslRequired =
     configService.get<string>('DB_SSL') === 'true' ||
-    databaseUrl?.includes('neon.tech');
+    !!databaseUrl ||
+    rawDatabaseUrl?.includes('neon.tech');
+
   const sslConfig = sslRequired ? { rejectUnauthorized: false } : undefined;
+
   const synchronize =
     configService.get<string>('DB_SYNC') === 'true' ? true : false;
 
