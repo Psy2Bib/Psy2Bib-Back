@@ -5,7 +5,7 @@
  * Elle stocke les informations de base de tous les utilisateurs (patients, psychologues, admins).
  * 
  * Note importante sur la sécurité :
- * Le password hash est généré côté client (ex: Argon2) puis re-hashé côté serveur avec bcrypt.
+ * Le password hash est généré côté client et stocké tel quel côté serveur.
  * Le backend ne voit jamais le mot de passe en clair.
  * 
  * @module users
@@ -79,9 +79,9 @@ export class User {
   /**
    * Hash du mot de passe
    * 
-   * ⚠️ IMPORTANT : Architecture Zero-Knowledge + double hashing
-   * - Le hash est généré côté CLIENT (ex: Argon2) et envoyé au backend.
-   * - Le backend re-hash ce hash avec bcrypt avant stockage.
+   * IMPORTANT : Architecture Zero-Knowledge
+   * - Le hash est généré côté CLIENT et envoyé au backend.
+   * - Le backend stocke ce hash tel quel.
    * - Le serveur ne connaît JAMAIS le mot de passe en clair.
    * 
    * Comportement spécial :
@@ -89,8 +89,8 @@ export class User {
    * - Il faut explicitement le demander avec { select: ['passwordHash'] }
    * - Ça évite les fuites accidentelles de hash dans les réponses API
    * 
-   * Le frontend peut utiliser bcrypt, argon2, ou tout autre algorithme de hashing.
-   * Le backend fait juste une comparaison simple : hash_reçu === hash_stocké
+   * Le frontend doit utiliser Argon2 (mêmes paramètres à l'inscription et au login).
+   * Le backend fait une comparaison simple : hash_reçu === hash_stocké
    */
   @Column({
     name: 'password_hash',

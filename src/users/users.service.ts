@@ -188,10 +188,10 @@ export class UsersService {
   }
 
   /**
-   * Met à jour le hash du mot de passe (hash côté serveur)
+   * Met à jour le hash du mot de passe (hash côté client)
    * 
-   * Utilisé pour migrer silencieusement les anciens comptes qui stockaient
-   * le hash frontend tel quel, ou pour forcer un re-hash.
+   * Utilisé lors d'un changement de mot de passe ou d'une migration
+   * de format côté client (ex: paramètres Argon2).
    */
   async updatePasswordHash(userId: string, passwordHash: string) {
     await this.usersRepo.update(userId, { passwordHash });

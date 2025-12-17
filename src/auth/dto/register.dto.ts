@@ -61,10 +61,8 @@ export class RegisterDto {
    * - Doit être une chaîne de caractères
    * - Minimum 8 caractères (pour éviter les hashs trop courts/invalides)
    * 
-   * Le frontend peut utiliser :
-   * - bcrypt (ex: $2a$12$abcd...)
+   * Le frontend doit utiliser Argon2 :
    * - argon2 (ex: $argon2id$v=19$...)
-   * - ou tout autre algorithme sécurisé
    * 
    * Le backend se contente de stocker ce hash tel quel.
    */

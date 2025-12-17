@@ -10,7 +10,7 @@
  * Architecture Zero-Knowledge :
  * - Le backend ne connaît JAMAIS les mots de passe en clair.
  * - Le frontend envoie un hash pré-calculé (ex: Argon2).
- * - Le backend le re-hash avec bcrypt avant stockage pour ajouter une couche côté serveur.
+ * - Le backend stocke ce hash tel quel et le compare lors du login.
  * 
  * Les refresh tokens sont également hashés côté backend avec bcrypt.
  * 
@@ -42,16 +42,12 @@ import { UserRole } from '../users/user.entity';
 @Injectable()
 export class AuthService {
   /**
-   * Nombre de rounds bcrypt pour le hashing côté serveur
+   * Nombre de rounds bcrypt pour le hashing des refresh tokens
    * 
    * 12 rounds = bon équilibre entre sécurité et performance
    * - Plus c'est élevé, plus c'est sécurisé (mais plus lent)
    * - 12 rounds prend environ 200-300ms sur un serveur moderne
    * - Recommandé par l'OWASP pour 2024
-   * 
-   * Note : On utilise bcrypt pour :
-   * - Re-hasher le hash de mot de passe reçu du frontend (double hashing)
-   * - Hasher les refresh tokens
    */
   private readonly rounds = 12;
 
@@ -122,15 +118,13 @@ export class AuthService {
     /**
      * Création de l'utilisateur
      * 
-     * ⚠️ POINT CRITIQUE : Double hashing
+     * POINT CRITIQUE : Pas de re-hash côté serveur
      * - Le frontend envoie déjà un hash (ex: Argon2) => le backend ne voit jamais le mot de passe.
-     * - On re-hash côté serveur avec bcrypt avant stockage pour ajouter une protection serveur.
+     * - On stocke ce hash tel quel.
      */
-    const passwordHashBcrypt = await bcrypt.hash(dto.passwordHash, this.rounds);
-
     const user = await this.usersService.create({
       email: dto.email,
-      passwordHash: passwordHashBcrypt, // Hash du hash frontend
+      passwordHash: dto.passwordHash, // Hash frontend (ex: Argon2)
       pseudo: dto.pseudo,
       role,
     });
@@ -240,13 +234,11 @@ export class AuthService {
    * 
    * Architecture Zero-Knowledge :
    * - Le frontend envoie un hash pré-calculé (même hash qu'à l'inscription)
-   * - On compare avec bcrypt le hash frontend (en entrée) et le hash bcrypt stocké
-   * - Compatibilité ascendante : si un ancien compte a encore le hash brut, on compare
-   *   en clair puis on le re-hash automatiquement avec bcrypt.
+   * - On compare directement le hash envoyé avec celui stocké
    * 
    * Cette approche garantit que :
    * 1. Le serveur ne voit jamais le mot de passe en clair
-   * 2. Le client peut utiliser l'algorithme de hashing de son choix
+   * 2. Le client utilise Argon2 avec les mêmes paramètres à l'inscription et au login
    * 3. Les calculs cryptographiques sont faits côté client (moins de charge serveur)
    * 
    * @param email - L'adresse email de l'utilisateur
@@ -269,18 +261,7 @@ export class AuthService {
     const user = await this.usersService.findByEmailWithPassword(email);
     if (!user) return null;
 
-    // Ancienne donnée : hash non bcrypt stocké tel quel → on compare en clair puis on migre
-    const isBcrypt = user.passwordHash.startsWith('$2');
-    if (isBcrypt) {
-      const match = await bcrypt.compare(incomingPasswordHash, user.passwordHash);
-      if (!match) return null;
-    } else {
-      if (user.passwordHash !== incomingPasswordHash) return null;
-      // Migration silencieuse : on re-hash côté serveur
-      const migratedHash = await bcrypt.hash(incomingPasswordHash, this.rounds);
-      await this.usersService.updatePasswordHash(user.id, migratedHash);
-      user.passwordHash = migratedHash;
-    }
+    if (user.passwordHash !== incomingPasswordHash) return null;
 
     return user;
   }

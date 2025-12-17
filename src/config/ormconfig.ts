@@ -38,7 +38,7 @@ export const getTypeOrmConfig = (
   const rawDatabaseUrl =
     configService.get<string>('DATABASE_URL') ||
     configService.get<string>('DB_URL');
-
+  
   /**
    * Normalisation de l'URL de connexion (cloud / Neon / managed Postgres)
    * 
